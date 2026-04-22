@@ -231,8 +231,10 @@ document.querySelectorAll(".accordion-header").forEach((header, index) => {
             const loading = content.querySelector(".loading");
             if (loading) loading.style.display = "block";
 
-            await new Promise(r => setTimeout(r, 50));
+            // Browser bekommt Zeit zum Rendern
+            await new Promise(r => requestAnimationFrame(r));
 
+            // Jetzt erst laden/trainieren
             if (index === 0) await loadA1();
             if (index === 1) await loadA2();
             if (index === 2) await loadA3();
@@ -241,4 +243,6 @@ document.querySelectorAll(".accordion-header").forEach((header, index) => {
             if (loading) loading.style.display = "none";
         }
     });
+});
+
 });
