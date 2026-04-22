@@ -1,25 +1,6 @@
 console.log("TFJS Regression Projekt gestartet");
 
 /* ============================================================
-   🔹 LOADING HANDLING
-   ============================================================ */
-
-function showLoading(id) {
-    const el = document.getElementById(id);
-    if (el) {
-        el.innerHTML = "<p style='text-align:center;'>lädt, bitte warten...</p>";
-    }
-}
-
-function hideLoading(id) {
-    const el = document.getElementById(id);
-    if (el) {
-        el.innerHTML = "";
-    }
-}
-
-
-/* ============================================================
    A1: DATENGENERIERUNG
    ============================================================ */
 
@@ -69,50 +50,34 @@ function splitTrainTest(xs, ys) {
     };
 }
 
-
-/* ============================================================
+/* ===============================
    DATEN ERZEUGEN
-   ============================================================ */
+================================ */
 
 const xs = generateXValues(100);
 const ys_clean = computeYValues(xs);
-
 const { train, test } = splitTrainTest(xs, ys_clean);
 
 const ys_train_noisy = addNoise(train.y);
 const ys_test_noisy = addNoise(test.y);
 
-
 /* ============================================================
-   PLOTS (MIT LOADING)
+   PLOTTING A1
    ============================================================ */
 
 function plotDatasetClean(train, test) {
-    showLoading("plot-clean");
-
-    setTimeout(() => {
-        Plotly.newPlot('plot-clean', [
-            { x: train.x, y: train.y, mode: 'markers', name: 'Train', marker: { color: 'blue' } },
-            { x: test.x, y: test.y, mode: 'markers', name: 'Test', marker: { color: 'red' } }
-        ]);
-
-        hideLoading("plot-clean");
-    }, 50);
+    Plotly.newPlot('plot-clean', [
+        { x: train.x, y: train.y, mode: 'markers', name: 'Train', marker: { color: 'blue' }},
+        { x: test.x, y: test.y, mode: 'markers', name: 'Test', marker: { color: 'red' }}
+    ], { title: 'Unverrauschte Daten' });
 }
 
 function plotDatasetNoisy(train, test, noisyTrain, noisyTest) {
-    showLoading("plot-noisy");
-
-    setTimeout(() => {
-        Plotly.newPlot('plot-noisy', [
-            { x: train.x, y: noisyTrain, mode: 'markers', name: 'Train', marker: { color: 'green' } },
-            { x: test.x, y: noisyTest, mode: 'markers', name: 'Test', marker: { color: 'orange' } }
-        ]);
-
-        hideLoading("plot-noisy");
-    }, 50);
+    Plotly.newPlot('plot-noisy', [
+        { x: train.x, y: noisyTrain, mode: 'markers', name: 'Train', marker: { color: 'green' }},
+        { x: test.x, y: noisyTest, mode: 'markers', name: 'Test', marker: { color: 'orange' }}
+    ], { title: 'Verrauschte Daten' });
 }
-
 
 /* ============================================================
    MODEL
@@ -140,30 +105,45 @@ function toTensors(xs, ys) {
     };
 }
 
-
 /* ============================================================
-   TRAINING
+   TRAININGS
    ============================================================ */
 
-async function trainModel(train, test, trainY, testY, epochs) {
+async function trainCleanModel() {
     const model = createModel();
+    const t = toTensors(train.x, train.y);
 
-    const trainT = toTensors(train.x, trainY);
-    const testT = toTensors(test.x, testY);
+    await model.fit(t.xsTensor, t.ysTensor, { epochs: 200, batchSize: 32, verbose: 0 });
 
-    await model.fit(trainT.xsTensor, trainT.ysTensor, {
-        epochs,
-        batchSize: 32,
-        shuffle: true,
-        verbose: 0
-    });
-
-    const trainLoss = model.evaluate(trainT.xsTensor, trainT.ysTensor).dataSync()[0];
-    const testLoss = model.evaluate(testT.xsTensor, testT.ysTensor).dataSync()[0];
-
-    return { model, trainLoss, testLoss };
+    return {
+        model,
+        trainLoss: model.evaluate(t.xsTensor, t.ysTensor).dataSync()[0]
+    };
 }
 
+async function trainBestFitModel() {
+    const model = createModel();
+    const t = toTensors(train.x, ys_train_noisy);
+
+    await model.fit(t.xsTensor, t.ysTensor, { epochs: 150, batchSize: 32, verbose: 0 });
+
+    return {
+        model,
+        trainLoss: model.evaluate(t.xsTensor, t.ysTensor).dataSync()[0]
+    };
+}
+
+async function trainOverfitModel() {
+    const model = createModel();
+    const t = toTensors(train.x, ys_train_noisy);
+
+    await model.fit(t.xsTensor, t.ysTensor, { epochs: 1500, batchSize: 32, verbose: 0 });
+
+    return {
+        model,
+        trainLoss: model.evaluate(t.xsTensor, t.ysTensor).dataSync()[0]
+    };
+}
 
 /* ============================================================
    PREDICTION
@@ -173,72 +153,92 @@ function predictCurve(model) {
     const xs = [];
     for (let x = -2; x <= 2; x += 0.01) xs.push(x);
 
-    const ys = Array.from(model.predict(tf.tensor2d(xs, [xs.length, 1])).dataSync());
+    const ys = model.predict(tf.tensor2d(xs, [xs.length, 1])).dataSync();
+
     return { xs, ys };
 }
 
-
 /* ============================================================
-   PLOT FUNCTIONS (MIT LOADING)
+   PLOTS A2–A4
    ============================================================ */
 
-function plotResult(plotId, lossId, train, test, model, trainLoss, testLoss, trainY, testY) {
-    showLoading(plotId);
+function plotModel(id, dataY, model) {
+    const curve = predictCurve(model);
 
-    setTimeout(() => {
-        const curve = predictCurve(model);
-
-        Plotly.newPlot(plotId, [
-            { x: train.x, y: trainY, mode: 'markers', name: 'Train' },
-            { x: test.x, y: testY, mode: 'markers', name: 'Test' },
-            { x: curve.xs, y: curve.ys, mode: 'lines', name: 'Prediction' }
-        ]);
-
-        document.getElementById(lossId).innerHTML = `
-            <p><b>Train Loss:</b> ${trainLoss.toFixed(6)}</p>
-            <p><b>Test Loss:</b> ${testLoss.toFixed(6)}</p>
-        `;
-
-        hideLoading(plotId);
-    }, 50);
+    Plotly.newPlot(id, [
+        { x: train.x, y: dataY, mode: 'markers' },
+        { x: curve.xs, y: curve.ys, mode: 'lines' }
+    ]);
 }
 
-
 /* ============================================================
-   EXECUTION
+   LAZY LOADING
    ============================================================ */
 
-plotDatasetClean(train, test);
-plotDatasetNoisy(train, test, ys_train_noisy, ys_test_noisy);
+let loaded = { a1:false, a2:false, a3:false, a4:false };
 
-trainModel(train, test, train.y, test.y, 200)
-    .then(r => plotResult("plot-clean-train", "loss-clean", train, test, r.model, r.trainLoss, r.testLoss, train.y, test.y));
+async function loadA1() {
+    if (loaded.a1) return;
+    plotDatasetClean(train, test);
+    plotDatasetNoisy(train, test, ys_train_noisy, ys_test_noisy);
+    loaded.a1 = true;
+}
 
-trainModel(train, test, ys_train_noisy, ys_test_noisy, 150)
-    .then(r => plotResult("plot-best-train", "loss-best", train, test, r.model, r.trainLoss, r.testLoss, ys_train_noisy, ys_test_noisy));
+async function loadA2() {
+    if (loaded.a2) return;
+    const res = await trainCleanModel();
+    plotModel("plot-clean-train", train.y, res.model);
+    loaded.a2 = true;
+}
 
-trainModel(train, test, ys_train_noisy, ys_test_noisy, 1500)
-    .then(r => plotResult("plot-overfit-train", "loss-overfit", train, test, r.model, r.trainLoss, r.testLoss, ys_train_noisy, ys_test_noisy));
+async function loadA3() {
+    if (loaded.a3) return;
+    const res = await trainBestFitModel();
+    plotModel("plot-best-train", ys_train_noisy, res.model);
+    loaded.a3 = true;
+}
 
+async function loadA4() {
+    if (loaded.a4) return;
+    const res = await trainOverfitModel();
+    plotModel("plot-overfit-train", ys_train_noisy, res.model);
+    loaded.a4 = true;
+}
 
 /* ============================================================
-   UI
+   UI LOGIK
    ============================================================ */
 
 function showSection(id) {
-    document.querySelectorAll('.content-section').forEach(sec => {
-        sec.style.display = (sec.id === id) ? 'block' : 'none';
-    });
+    document.querySelectorAll('.content-section')
+        .forEach(sec => sec.style.display = (sec.id === id ? 'block' : 'none'));
 }
 
-document.querySelectorAll(".accordion-header").forEach(header => {
-    header.addEventListener("click", () => {
-        const item = header.parentElement;
+/* ============================================================
+   ACCORDION + LOADING
+   ============================================================ */
 
-        item.parentElement.querySelectorAll(".accordion-item").forEach(other => {
-            if (other !== item) other.classList.remove("active");
-        });
+document.querySelectorAll(".accordion-header").forEach((header, index) => {
+    header.addEventListener("click", async () => {
+
+        const item = header.parentElement;
+        const content = header.nextElementSibling;
 
         item.classList.toggle("active");
+
+        if (item.classList.contains("active")) {
+
+            const loading = content.querySelector(".loading");
+            if (loading) loading.style.display = "block";
+
+            await new Promise(r => setTimeout(r, 50));
+
+            if (index === 0) await loadA1();
+            if (index === 1) await loadA2();
+            if (index === 2) await loadA3();
+            if (index === 3) await loadA4();
+
+            if (loading) loading.style.display = "none";
+        }
     });
 });
