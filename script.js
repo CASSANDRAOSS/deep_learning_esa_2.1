@@ -175,7 +175,7 @@ async function runTrainings() {
 runTrainings();
 
 /* ============================================================
-   NAV & AKKORDEON
+   NAV & AKKORDEON (Exklusives Verhalten)
    ============================================================ */
 
 function showSection(id) {
@@ -184,8 +184,20 @@ function showSection(id) {
     });
 }
 
+// Diese Logik sorgt dafür, dass sich andere schließen
 document.querySelectorAll(".accordion-header").forEach(header => {
     header.addEventListener("click", () => {
-        header.parentElement.classList.toggle("active");
+        const currentItem = header.parentElement;
+        const isOpen = currentItem.classList.contains("active");
+
+        // 1. Alle Akkordeon-Items auf der Seite finden und schließen
+        document.querySelectorAll(".accordion-item").forEach(item => {
+            item.classList.remove("active");
+        });
+
+        // 2. Nur das aktuell geklickte Item öffnen, falls es vorher zu war
+        if (!isOpen) {
+            currentItem.classList.add("active");
+        }
     });
 });
