@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>TFJS Regression</title>
+
+    <!-- Externe CSS-Datei für Layout und Design -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- TensorFlow.js für das neuronale Netz -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.18.0/dist/tf.min.js"></script>
+
+    <!-- Plotly für interaktive Diagramme -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+
+<body>
+
+    <!-- HEADER-BEREICH: Titel, Avatar und Navigation -->
+    <div class="header-section">
+        <h1>Willkommen auf meiner Seite zur nichtlinearen Regression mit TensorFlow.js</h1>
+
+        <!-- Avatar-Bild (rein dekorativ) -->
+        <div class="avatar-container">
+            <img src="4.png" alt="Avatar" class="avatar">
+        </div>
+
+        <!-- Navigation zwischen den Inhaltsbereichen -->
+        <div class="nav-buttons">
+            <button onclick="showSection('section-intro')">Einführung</button>
+            <button onclick="showSection('section-params')">Verwendete Parameter</button>
+            <button onclick="showSection('section-models')">Modelle & Visualisierungen</button>
+            <button onclick="showSection('section-discussion')">Diskussion</button>
+            <button onclick="showSection('section-docu')">Dokumentation</button>
+        </div>
+    </div>
+
+
+    <!-- EINLEITUNG -->
+    <div id="section-intro" class="content-section" style="display:none;">
+        <div class="content-box">
+            <p>
+            Daten sind wie Sterne am Nachthimmel, verstreut, funkelnd, scheinbar chaotisch.
+            Neuronale Netze wirken wie Teleskope: Sie sammeln Lichtpunkte ein, verstärken Signale 
+            und enthüllen verborgene Strukturen, die dem bloßen Auge entgehen.
+
+            In dieser Aufgabe schlüpfen wir in die Rolle solcher „Datenastronomen“.
+            Wir betrachten eine unbekannte Funktion, deren Werte wir nur als Messpunkte erhalten, teils 
+            klar, teils verrauscht wie ein Himmel voller kosmischem Hintergrundrauschen. Mit einem 
+            Feed‑Forward Neural Network und TensorFlow.js lernen wir, diese Funktion zu rekonstruieren, 
+            Muster vom Rauschen zu trennen und zu verstehen, wie Modelle generalisieren oder überanpassen.
+            </p>
+        </div>
+    </div>
+
+
+    <!-- PARAMETER -->
+    <div id="section-params" class="content-section" style="display:none;">
+        <div class="content-box">
+            <ul>
+                <li><b>Modellarchitektur:</b> 2 Hidden Layers, je 100 Neuronen</li>
+                <li><b>Aktivierungen:</b> ReLU in den Hidden Layers, linear im Output</li>
+                <li><b>Optimizer:</b> Adam</li>
+                <li><b>Lernrate:</b> 0.01</li>
+                <li><b>Batch Size:</b> 32</li>
+                <li><b>Loss:</b> Mean Squared Error (MSE)</li>
+                <li><b>Datenpunkte:</b> 100 (50 Train, 50 Test)</li>
+                <li><b>Verteilung:</b> x-Werte gleichverteilt in [-2, 2]</li>
+                <li><b>Rauschen:</b> Gaussian Noise, Varianz 0.05</li>
+                <li><b>Epochs (Clean Model):</b> 200</li>
+                <li><b>Epochs (Best‑Fit):</b> 150</li>
+                <li><b>Epochs (Overfit):</b> 1500</li>
+            </ul>
+
+        </div>
+    </div>
+
+
+    <!-- MODELLE (Akkordeon) -->
+    <div id="section-models" class="content-section" style="display:none;">
+        <div class="accordion">
+
+            <div class="accordion-item">
+                <button class="accordion-header">
+                    <span>A1 & R1 – Datengenerierung + Visualisierung</span>
+                    <span class="arrow">▸</span>
+                </button>
+                <div class="accordion-content">
+                    <div class="plot-row">
+                        <div id="plot-clean" class="plot plot-dataset"></div>
+                        <div id="plot-noisy" class="plot plot-dataset"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <button class="accordion-header">
+                    <span>A2 & R2 – Modell ohne Rauschen</span>
+                    <span class="arrow">▸</span>
+                </button>
+                <div class="accordion-content">
+                    <div class="plot-row">
+                        <div id="plot-clean-train" class="plot"></div>
+                        <div id="plot-clean-test" class="plot"></div>
+                    </div>
+                    <div id="loss-clean"></div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <button class="accordion-header">
+                    <span>A3 & R3 – Best‑Fit Modell</span>
+                    <span class="arrow">▸</span>
+                </button>
+                <div class="accordion-content">
+                    <div class="plot-row">
+                        <div id="plot-best-train" class="plot"></div>
+                        <div id="plot-best-test" class="plot"></div>
+                    </div>
+                    <div id="loss-best"></div>
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <button class="accordion-header">
+                    <span>A4 & R4 – Overfit Modell</span>
+                    <span class="arrow">▸</span>
+                </button>
+                <div class="accordion-content">
+                    <div class="plot-row">
+                        <div id="plot-overfit-train" class="plot"></div>
+                        <div id="plot-overfit-test" class="plot"></div>
+                    </div>
+                    <div id="loss-overfit"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- DISKUSSION -->
+    <div id="section-discussion" class="content-section" style="display:none;">
+        <div class="content-box">
+            <p>
+                Lernen bedeutet immer, zwischen Ordnung und Zufall zu unterscheiden. 
+                In den unverrauschten Daten folgt das Modell der wahren Funktion fast mühelos, 
+                als würde es eine vertraute Spur wiederentdecken, die nie wirklich verborgen war.
+                Sobald jedoch Rauschen ins Spiel kommt, beginnt ein feiner Balanceakt: 
+                Das Best‑Fit‑Modell erkennt die Form hinter den Störungen, glättet Ausreißer 
+                und hält respektvollen Abstand zu den Zufälligkeiten der Messung. 
+                Das Overfit‑Modell hingegen verliert sich im Detail. 
+                Es folgt jeder Schwankung, als wäre sie bedeutsam, 
+                und verliert dabei die Fähigkeit, das Wesentliche vom Zufälligen zu trennen.
+                So zeigt sich, dass Generalisierung kein technischer Nebeneffekt ist, 
+                sondern ein Kern des Lernens selbst: ein Ringen zwischen Nähe und Distanz, 
+                zwischen Vertrauen und Skepsis. 
+                Gerade dort, wo das Modell scheitert, wird sichtbar, 
+                wie schmal der Grat zwischen Erkenntnis und Illusion sein kann.
+            </p>
+
+        </div>
+    </div>
+
+
+    <!-- DOKUMENTATION (kleines Akkordeon) -->
+    <div id="section-docu" class="content-section" style="display:none;">
+        <div class="accordion">
+
+            <div class="accordion-item">
+                <button class="accordion-header">
+                    <span>Technisch</span>
+                    <span class="arrow">▸</span>
+                </button>
+                <div class="accordion-content">
+                    <p><b>Frameworks und Bibliotheken</b></p>
+                    <ul>
+                        <li><b>TensorFlow.js:</b> Training und Ausführung des neuronalen Netzes direkt im Browser.</li>
+                        <li><b>Plotly.js:</b> Interaktive Visualisierung der Datenpunkte und Modellkurven.</li>
+                        <li><b>HTML, CSS, JavaScript:</b> Struktur, Gestaltung und Logik der gesamten Anwendung.</li>
+                    </ul>
+
+                    <p><b>Technische Besonderheiten</b></p>
+                    <ul>
+                        <li>Alle Daten werden dynamisch erzeugt und somit keine statischen Dateien.</li>
+                        <li>Die Modelle werden vollständig clientseitig trainiert.</li>
+                        <li>Loss‑Werte werden automatisch berechnet und unter den Diagrammen angezeigt.</li>
+                        <li>Die Inhalte sind in Sektionen und Akkordeons organisiert, um Übersichtlichkeit zu gewährleisten.</li>
+                    </ul>
+
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <button class="accordion-header">
+                    <span>Fachlich</span>
+                    <span class="arrow">▸</span>
+                </button>
+                <div class="accordion-content">
+                    <p><b>Ansatz</b></p>
+                    <p>
+                        Ziel war es, eine unbekannte nichtlineare Funktion allein anhand ihrer Datenpunkte zu approximieren. 
+                        Das Modell kennt die Funktion nicht, es sieht nur Beispiele, manche klar, manche verrauscht. 
+                        Dadurch entsteht ein kleines Labor für Generalisierung: 
+                        Wie viel Struktur erkennt ein Modell? 
+                        Wie viel Rauschen ignoriert es? 
+                        Und wann verliert es sich in Details?
+                    </p>
+
+                    <p><b>Implementierung</b></p>
+                    <p>
+                        Das neuronale Netz besteht aus zwei Hidden Layers mit je 100 Neuronen (ReLU) 
+                        und einem linearen Output‑Neuron für reelle Werte. 
+                        Trainiert wurde mit Adam (LR = 0.01) und MSE‑Loss.
+                    </p>
+
+                    <p><b>Resultate</b></p>
+                    <p>
+                        Das Modell ohne Rauschen generalisiert nahezu perfekt. 
+                        Das Best‑Fit‑Modell glättet das Rauschen und erkennt die zugrunde liegende Struktur. 
+                        Das Overfit‑Modell folgt dem Rauschen und verliert seine Generalisierungsfähigkeit. 
+                        So entsteht ein klarer Vergleich zwischen Lernen, Glätten und Überanpassen.
+                    </p>
+
+                </div>
+            </div>
+
+            <div class="accordion-item">
+                <button class="accordion-header">
+                    <span>Projekt-PDF herunterladen</span>
+                    <span class="arrow">▸</span>
+                </button>
+            <div class="accordion-content">
+                <p>
+                    Das vollständige Dokument "Regression mit Neuronalen Netzen
+                    Einfach erklärt" kann hier heruntergeladen werden:
+                </p>
+                <a href="assets/Protokoll_deep_Learning.pdf" download>
+                    <button style="padding:10px 20px; font-size:16px; background-color:#4a90e2; color:white; border:none; border-radius:6px; cursor:pointer;">
+                PDF herunterladen
+                    </button>
+                </a>
+            </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
