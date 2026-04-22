@@ -1,7 +1,7 @@
 console.log("TFJS Regression Projekt gestartet");
 
 /* ============================================================
-   A1: DATENGENERIERUNG
+   DATENGENERIERUNG & HELFER
    ============================================================ */
 
 function groundTruth(x) {
@@ -36,23 +36,21 @@ function splitTrainTest(xs, ys) {
     indices.sort(() => Math.random() - 0.5);
     const trainIdx = indices.slice(0, 50);
     const testIdx = indices.slice(50);
-
     return {
         train: { x: trainIdx.map(i => xs[i]), y: trainIdx.map(i => ys[i]) },
         test: { x: testIdx.map(i => xs[i]), y: testIdx.map(i => ys[i]) }
     };
 }
 
-// Daten initial erzeugen
+// Global verfügbare Daten
 const xs_raw = generateXValues(100);
 const ys_clean_raw = computeYValues(xs_raw);
 const { train, test } = splitTrainTest(xs_raw, ys_clean_raw);
-
 const ys_train_noisy = addNoise(train.y);
 const ys_test_noisy = addNoise(test.y);
 
 /* ============================================================
-   MODELL-LOGIK
+   TENSORFLOW LOGIK
    ============================================================ */
 
 function createModel() {
@@ -73,118 +71,121 @@ function toTensors(xs, ys) {
 
 function predictCurve(model) {
     const xs = [];
-    for (let x = -2; x <= 2; x += 0.05) xs.push(x);
+    for (let x = -2.1; x <= 2.1; x += 0.05) xs.push(x);
     const xsTensor = tf.tensor2d(xs, [xs.length, 1]);
     const ysTensor = model.predict(xsTensor);
-    return { xs, ys: Array.from(ysTensor.dataSync()) };
+    const ys = Array.from(ysTensor.dataSync());
+    // Aufräumen um Speicherlecks zu verhindern
+    xsTensor.dispose();
+    ysTensor.dispose();
+    return { xs, ys };
 }
+
+/* ============================================================
+   UI FUNKTIONEN (Laden & Plotten)
+   ============================================================ */
 
 function hideLoader(id) {
     const loader = document.getElementById(id);
-    if (loader) loader.style.display = "none";
+    if (loader) {
+        console.log("Entferne Loader:", id);
+        loader.style.display = "none"; // Sicher wegschalten
+        loader.remove(); // Und komplett aus dem DOM löschen
+    }
 }
-
-/* ============================================================
-   TRAININGS-FUNKTIONEN
-   ============================================================ */
-
-async function trainCleanModel(train, test) {
-    const model = createModel();
-    const t = toTensors(train.x, train.y);
-    await model.fit(t.xsTensor, t.ysTensor, { epochs: 200, verbose: 0 });
-    const trainLoss = model.evaluate(t.xsTensor, t.ysTensor).dataSync()[0];
-    const testT = toTensors(test.x, test.y);
-    const testLoss = model.evaluate(testT.xsTensor, testT.ysTensor).dataSync()[0];
-    return { model, trainLoss, testLoss };
-}
-
-async function trainBestFitModel(train, test, noisyTrainY, noisyTestY) {
-    const model = createModel();
-    const t = toTensors(train.x, noisyTrainY);
-    await model.fit(t.xsTensor, t.ysTensor, { epochs: 150, verbose: 0 });
-    const trainLoss = model.evaluate(t.xsTensor, t.ysTensor).dataSync()[0];
-    const testT = toTensors(test.x, noisyTestY);
-    const testLoss = model.evaluate(testT.xsTensor, testT.ysTensor).dataSync()[0];
-    return { model, trainLoss, testLoss };
-}
-
-async function trainOverfitModel(train, test, noisyTrainY, noisyTestY) {
-    const model = createModel();
-    const t = toTensors(train.x, noisyTrainY);
-    await model.fit(t.xsTensor, t.ysTensor, { epochs: 1500, verbose: 0 });
-    const trainLoss = model.evaluate(t.xsTensor, t.ysTensor).dataSync()[0];
-    const testT = toTensors(test.x, noisyTestY);
-    const testLoss = model.evaluate(testT.xsTensor, testT.ysTensor).dataSync()[0];
-    return { model, trainLoss, testLoss };
-}
-
-/* ============================================================
-   VISUALISIERUNG
-   ============================================================ */
 
 function plotResults(containerTrain, containerTest, lossContainer, trainData, testData, model, trainL, testL, titleSuffix) {
-    const curve = predictCurve(model);
-    
-    const traceTrain = { x: trainData.x, y: trainData.y, mode: 'markers', name: 'Train', marker: { color: 'blue' } };
-    const traceTest = { x: testData.x, y: testData.y, mode: 'markers', name: 'Test', marker: { color: 'red' } };
-    const traceCurve = { x: curve.xs, y: curve.ys, mode: 'lines', name: 'Modell', line: { color: 'black', width: 3 } };
+    try {
+        const curve = predictCurve(model);
+        
+        const traceTrain = { x: trainData.x, y: trainData.y, mode: 'markers', name: 'Daten (Train)', marker: { color: 'blue' } };
+        const traceTest = { x: testData.x, y: testData.y, mode: 'markers', name: 'Daten (Test)', marker: { color: 'red' } };
+        const traceCurve = { x: curve.xs, y: curve.ys, mode: 'lines', name: 'Modell Kurve', line: { color: 'black', width: 3 } };
 
-    Plotly.newPlot(containerTrain, [traceTrain, traceCurve], { title: `Training (${titleSuffix})` });
-    Plotly.newPlot(containerTest, [traceTest, traceCurve], { title: `Test (${titleSuffix})` });
+        const layout = { margin: { t: 40, b: 40, l: 40, r: 20 }, hovermode: 'closest' };
 
-    document.getElementById(lossContainer).innerHTML = `
-        <div class="content-box" style="background: #eee; text-align: center;">
-            <strong>Train Loss:</strong> ${trainL.toFixed(6)} | <strong>Test Loss:</strong> ${testL.toFixed(6)}
-        </div>
-    `;
+        Plotly.newPlot(containerTrain, [traceTrain, traceCurve], { ...layout, title: `Training (${titleSuffix})` });
+        Plotly.newPlot(containerTest, [traceTest, traceCurve], { ...layout, title: `Test (${titleSuffix})` });
+
+        const lossBox = document.getElementById(lossContainer);
+        if (lossBox) {
+            lossBox.innerHTML = `
+                <div class="content-box" style="background: #efefef; text-align: center; border: 1px solid #ccc;">
+                    <strong>Ergebnis ${titleSuffix}:</strong><br>
+                    Train Loss: <code>${trainL.toFixed(6)}</code> | Test Loss: <code>${testL.toFixed(6)}</code>
+                </div>
+            `;
+        }
+    } catch (err) {
+        console.error("Fehler beim Plotten von " + titleSuffix, err);
+    }
 }
-
-// Initialer Start der Prozesse
-// A1 & R1
-function initA1() {
-    Plotly.newPlot('plot-clean', [
-        { x: train.x, y: train.y, mode: 'markers', name: 'Train' },
-        { x: test.x, y: test.y, mode: 'markers', name: 'Test' }
-    ], { title: 'Clean Data' });
-    
-    Plotly.newPlot('plot-noisy', [
-        { x: train.x, y: ys_train_noisy, mode: 'markers', name: 'Train Noisy' },
-        { x: test.x, y: ys_test_noisy, mode: 'markers', name: 'Test Noisy' }
-    ], { title: 'Noisy Data' });
-    hideLoader('loader-a1');
-}
-
-initA1();
-
-// A2
-trainCleanModel(train, test).then(res => {
-    hideLoader('loader-clean');
-    plotResults('plot-clean-train', 'plot-clean-test', 'loss-clean', train, test, res.model, res.trainLoss, res.testLoss, "Clean");
-});
-
-// A3
-trainBestFitModel(train, test, ys_train_noisy, ys_test_noisy).then(res => {
-    hideLoader('loader-best');
-    plotResults('plot-best-train', 'plot-best-test', 'loss-best', {x: train.x, y: ys_train_noisy}, {x: test.x, y: ys_test_noisy}, res.model, res.trainLoss, res.testLoss, "Best-Fit");
-});
-
-// A4
-trainOverfitModel(train, test, ys_train_noisy, ys_test_noisy).then(res => {
-    hideLoader('loader-overfit');
-    plotResults('plot-overfit-train', 'plot-overfit-test', 'loss-overfit', {x: train.x, y: ys_train_noisy}, {x: test.x, y: ys_test_noisy}, res.model, res.trainLoss, res.testLoss, "Overfit");
-});
 
 /* ============================================================
-   UI LOGIK
+   TRAININGS-ABLAUF (Async)
+   ============================================================ */
+
+async function runTrainings() {
+    // A1: Datengenerierung visualisieren (kein Training nötig)
+    Plotly.newPlot('plot-clean', [{ x: train.x, y: train.y, mode: 'markers', name: 'Train' }, { x: test.x, y: test.y, mode: 'markers', name: 'Test' }], { title: 'Unverrauschte Daten' });
+    Plotly.newPlot('plot-noisy', [{ x: train.x, y: ys_train_noisy, mode: 'markers', name: 'Train Noisy' }, { x: test.x, y: ys_test_noisy, mode: 'markers', name: 'Test Noisy' }], { title: 'Verrauschte Daten' });
+    hideLoader('loader-a1');
+
+    // A2: Clean Model
+    try {
+        const model2 = createModel();
+        const t = toTensors(train.x, train.y);
+        const testT = toTensors(test.x, test.y);
+        await model2.fit(t.xsTensor, t.ysTensor, { epochs: 200, verbose: 0 });
+        const trL = model2.evaluate(t.xsTensor, t.ysTensor).dataSync()[0];
+        const teL = model2.evaluate(testT.xsTensor, testT.ysTensor).dataSync()[0];
+        
+        hideLoader('loader-clean');
+        plotResults('plot-clean-train', 'plot-clean-test', 'loss-clean', train, test, model2, trL, teL, "Clean");
+    } catch (e) { console.error(e); }
+
+    // A3: Best-Fit (moderate Epochen)
+    try {
+        const model3 = createModel();
+        const t = toTensors(train.x, ys_train_noisy);
+        const testT = toTensors(test.x, ys_test_noisy);
+        await model3.fit(t.xsTensor, t.ysTensor, { epochs: 150, verbose: 0 });
+        const trL = model3.evaluate(t.xsTensor, t.ysTensor).dataSync()[0];
+        const teL = model3.evaluate(testT.xsTensor, testT.ysTensor).dataSync()[0];
+
+        hideLoader('loader-best');
+        plotResults('plot-best-train', 'plot-best-test', 'loss-best', {x: train.x, y: ys_train_noisy}, {x: test.x, y: ys_test_noisy}, model3, trL, teL, "Best-Fit");
+    } catch (e) { console.error(e); }
+
+    // A4: Overfit (viele Epochen)
+    try {
+        const model4 = createModel();
+        const t = toTensors(train.x, ys_train_noisy);
+        const testT = toTensors(test.x, ys_test_noisy);
+        await model4.fit(t.xsTensor, t.ysTensor, { epochs: 1500, verbose: 0 });
+        const trL = model4.evaluate(t.xsTensor, t.ysTensor).dataSync()[0];
+        const teL = model4.evaluate(testT.xsTensor, testT.ysTensor).dataSync()[0];
+
+        hideLoader('loader-overfit');
+        plotResults('plot-overfit-train', 'plot-overfit-test', 'loss-overfit', {x: train.x, y: ys_train_noisy}, {x: test.x, y: ys_test_noisy}, model4, trL, teL, "Overfit");
+    } catch (e) { console.error(e); }
+}
+
+// Start der Kette
+runTrainings();
+
+/* ============================================================
+   NAV & AKKORDEON
    ============================================================ */
 
 function showSection(id) {
-    document.querySelectorAll('.content-section').forEach(sec => sec.style.display = (sec.id === id) ? 'block' : 'none');
+    document.querySelectorAll('.content-section').forEach(sec => {
+        sec.style.display = (sec.id === id) ? 'block' : 'none';
+    });
 }
 
 document.querySelectorAll(".accordion-header").forEach(header => {
     header.addEventListener("click", () => {
-        const item = header.parentElement;
-        item.classList.toggle("active");
+        header.parentElement.classList.toggle("active");
     });
 });
