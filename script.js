@@ -1,13 +1,21 @@
 console.log("TFJS Regression Projekt gestartet");
 
 /* ============================================================
-   DATENGENERIERUNG & HELFER
+   A1: DATENGENERIERUNG
+   ------------------------------------------------------------
+   - Erzeugt 100 gleichverteilte x-Werte im Intervall [-2, 2]
+   - Berechnet die Ground-Truth y(x)
+   - Fügt optional Gaussian Noise hinzu
+   - Splittet in 50 Trainings- und 50 Testdaten
    ============================================================ */
 
+// Ground-Truth Funktion y(x)
 function groundTruth(x) {
+   // die Funktion aus der Aufgabenstellung
     return 0.5 * (x + 0.8) * (x + 1.8) * (x - 0.2) * (x - 0.3) * (x - 1.9) + 1;
 }
 
+// 100 gleichverteilte x-Werte in [-2, 2]
 function generateXValues(N = 100) {
     const xs = [];
     for (let i = 0; i < N; i++) {
@@ -16,21 +24,26 @@ function generateXValues(N = 100) {
     return xs;
 }
 
+// y-Werte berechnen (unverrauscht)
 function computeYValues(xs) {
     return xs.map(x => groundTruth(x));
 }
 
+// Gaussian Noise (Varianz = 0.05)
 function gaussianNoise(mean = 0, variance = 0.05) {
+   // erzeugt normalverteilte Zufallszahlen
     const u1 = Math.random();
     const u2 = Math.random();
     const randStdNormal = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
     return mean + Math.sqrt(variance) * randStdNormal;
 }
 
+// Rauschen zu y hinzufügen
 function addNoise(ys, variance = 0.05) {
     return ys.map(y => y + gaussianNoise(0, variance));
 }
 
+// Zufälliger Split in 50 Train / 50 Test
 function splitTrainTest(xs, ys) {
     const indices = [...xs.keys()];
     indices.sort(() => Math.random() - 0.5);
@@ -42,10 +55,13 @@ function splitTrainTest(xs, ys) {
     };
 }
 
-// Global verfügbare Daten
+// ===============================
+// DATEN ERZEUGEN
+// ===============================
 const xs_raw = generateXValues(100);
 const ys_clean_raw = computeYValues(xs_raw);
 const { train, test } = splitTrainTest(xs_raw, ys_clean_raw);
+// verrauschte Versionen
 const ys_train_noisy = addNoise(train.y);
 const ys_test_noisy = addNoise(test.y);
 
@@ -55,13 +71,18 @@ const ys_test_noisy = addNoise(test.y);
 
 function createModel() {
     const model = tf.sequential();
+   // Hidden Layer 1
     model.add(tf.layers.dense({ units: 100, activation: 'relu', inputShape: [1] }));
+   // Hidden Layer 2
     model.add(tf.layers.dense({ units: 100, activation: 'relu' }));
+   // Output Layer (linear)
     model.add(tf.layers.dense({ units: 1, activation: 'linear' }));
+   // Compile
     model.compile({ optimizer: tf.train.adam(0.01), loss: 'meanSquaredError' });
     return model;
 }
 
+// Wandelt JS-Arrays in TensorFlow-Tensoren um
 function toTensors(xs, ys) {
     return {
         xsTensor: tf.tensor2d(xs, [xs.length, 1]),
