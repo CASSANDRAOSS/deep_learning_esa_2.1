@@ -20,7 +20,7 @@ function groundTruth(x) {
 function generateXValues(N = 100) {
     const xs = [];
     for (let i = 0; i < N; i++) {
-@@ -16,21 +24,26 @@
+
     return xs;
 }
 
@@ -47,7 +47,7 @@ function addNoise(ys, variance = 0.05) {
 function splitTrainTest(xs, ys) {
     const indices = [...xs.keys()];
     indices.sort(() => Math.random() - 0.5);
-@@ -42,10 +55,13 @@
+
     };
 }
 
@@ -62,7 +62,7 @@ const { train, test } = splitTrainTest(xs_raw, ys_clean_raw);
 const ys_train_noisy = addNoise(train.y);
 const ys_test_noisy = addNoise(test.y);
 
-@@ -55,149 +71,154 @@
+
 
 function createModel() {
     const model = tf.sequential();
@@ -130,7 +130,7 @@ function plotResults(containerTrain, containerTest, lossContainer, trainData, te
                     <strong>Ergebnis ${titleSuffix}:</strong><br>
                     Train Loss: <code>${trainL.toFixed(6)}</code> | Test Loss: <code>${testL.toFixed(6)}</code>
                 </div>
-            `;
+            ;
         }
     } catch (err) {
         console.error("Fehler beim Plotten von " + titleSuffix, err);
