@@ -31,7 +31,10 @@ function computeYValues(xs) {
 
 // Gaussian Noise (Varianz = 0.05)
 function gaussianNoise(mean = 0, variance = 0.05) {
-    // erzeugt normalverteilte Zufallszahlen
+     // erzeugt normalverteilte Zufallszahlen
+    // Box-Muller-Transformation zur Erzeugung normalverteilter Zufallszahlen.
+   // Falls Math.random() ausnahmsweise 0 liefert, verhindert 1e-10 einen Fehler bei Math.log(0).
+
     //const u1 = Math.random();
     const u1 = Math.random() || 1e-10;
     const u2 = Math.random();
@@ -204,7 +207,9 @@ async function trainBestFitModel(train, test, noisyTrainY, noisyTestY) {
 
     console.log("Training Best-Fit Modell (noisy)...");
 
-    // moderate Anzahl an Epochen → gute Generalisierung
+    // Moderate Anzahl an Epochen:
+   // Das Modell soll die Grundstruktur der verrauschten Daten lernen,
+   // aber nicht jede zufällige Schwankung des Rauschens nachzeichnen.
     const history = await model.fit(trainTensors.xsTensor, trainTensors.ysTensor, {
         epochs: 150,
         batchSize: 32,
@@ -233,7 +238,10 @@ async function trainOverfitModel(train, test, noisyTrainY, noisyTestY) {
 
     console.log("Training Overfit Modell (noisy)...");
 
-    // ABSICHTLICH VIEL ZU VIELE EPOCHEN
+    // Absichtlich sehr viele Epochen:
+   // Dadurch kann das Modell beginnen, nicht nur die Funktion,
+   // sondern auch zufällige Rauschanteile der Trainingsdaten zu lernen.
+   // Sichtbar wird Overfitting, wenn der Trainings-Loss deutlich kleiner ist als der Test-Loss.
     const history = await model.fit(trainTensors.xsTensor, trainTensors.ysTensor, {
         epochs: 1500,   
         batchSize: 32,
@@ -306,6 +314,12 @@ function predictCurve(model) {
     return { xs, ys };
 }
 
+/* ------------------------------------------------------------
+   Visualisiert den Trainingsverlauf als Loss-Kurve.
+   Die Kurve zeigt, wie stark der Fehler während der Epochen sinkt.
+   Dadurch wird nachvollziehbar, ob das Modell noch lernt,
+   stabil bleibt oder bei zu langem Training zum Overfitting neigt.
+   ------------------------------------------------------------ */
 function plotLossCurve(divId, history, title) {
     const lossValues = history.history.loss;
 
@@ -518,7 +532,15 @@ function plotOverfitPredictions(train, test, model, trainLoss, testLoss, noisyTr
     `;
 }
 
-
+/* ------------------------------------------------------------
+   Startet die drei Modelltrainings automatisch beim Laden der Seite.
+   Nach Abschluss werden jeweils:
+   - Vorhersageplots erzeugt,
+   - Loss-Werte ausgegeben,
+   - Loss-Lernkurven angezeigt,
+   - Ladehinweise ausgeblendet.
+   Falls ein Fehler auftritt, erscheint eine Meldung im jeweiligen Abschnitt.
+   ------------------------------------------------------------ */
 trainCleanModel(train, test).then(result => {
     plotCleanPredictions(
         train,
