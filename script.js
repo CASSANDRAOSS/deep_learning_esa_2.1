@@ -114,8 +114,8 @@ function plotDatasetClean(train, test) {
         title: 'Unverrauschte Daten',
         xaxis: { title: 'x', automargin: true },
         yaxis: { title: 'y', automargin: true },
-        margin: { l: 50, r: 30, t: 50, b: 50 },
-        width: 400  
+        margin: { l: 60, r: 30, t: 60, b: 80 },
+        autosize: true
     };
 
     Plotly.newPlot('plot-clean', [traceTrain, traceTest], layout, { responsive: true });
@@ -142,8 +142,8 @@ function plotDatasetNoisy(train, test, noisyTrain, noisyTest) {
         title: 'Verrauschte Daten',
         xaxis: { title: 'x', automargin: true },
         yaxis: { title: 'y', automargin: true },
-        margin: { l: 50, r: 30, t: 50, b: 50 },
-        width: 400
+        margin: { l: 60, r: 30, t: 60, b: 80 },
+        autosize: true
     };
 
     Plotly.newPlot('plot-noisy', [traceTrain, traceTest], layout, { responsive: true });
