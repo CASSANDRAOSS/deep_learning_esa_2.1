@@ -98,15 +98,20 @@
                 <button class="accordion-header">
                     <span>A2 & R2 – Modell ohne Rauschen</span>
                     <span class="arrow">▸</span>
-                    <div id="loading-clean" class="loading-box">
-                        Modell wird geladen und trainiert ...
-                    </div>
                 </button>
+
+                
                 <div class="accordion-content">
+                    <div id="loading-clean" class="loading-box">
+                        Modell wird geladen und trainiert....
+                    </div>
+                    
                     <div class="plot-row">
                         <div id="plot-clean-train" class="plot"></div>
                         <div id="plot-clean-test" class="plot"></div>
                     </div>
+
+                    <div id="loss-clean-plot" class="loss-plot"></div>
                     <div id="loss-clean"></div>
                 </div>
             </div>
@@ -117,11 +122,18 @@
                     <span class="arrow">▸</span>
                 </button>
                 <div class="accordion-content">
+                    <div id="loading-best" class="loading-box">
+                        Best-Fit-Modell wird geladen und trainiert ...
+                    </div>
+                    
                     <div class="plot-row">
                         <div id="plot-best-train" class="plot"></div>
                         <div id="plot-best-test" class="plot"></div>
                     </div>
+                    
+                    <div id="loss-best-plot" class="loss-plot"></div>
                     <div id="loss-best"></div>
+                    
                 </div>
             </div>
 
@@ -131,10 +143,15 @@
                     <span class="arrow">▸</span>
                 </button>
                 <div class="accordion-content">
+                    <div id="loading-overfit" class="loading-box">
+                        Overfit-Modell wird geladen und trainiert ...
+                    </div>
                     <div class="plot-row">
                         <div id="plot-overfit-train" class="plot"></div>
                         <div id="plot-overfit-test" class="plot"></div>
                     </div>
+
+                    <div id="loss-overfit-plot" class="loss-plot"></div>
                     <div id="loss-overfit"></div>
                 </div>
             </div>
