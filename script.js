@@ -338,7 +338,7 @@ function plotLossCurve(divId, history, title) {
         xaxis: { title: 'Epoch', automargin: true },
         yaxis: { title: 'MSE Loss', automargin: true },
         autosize: true,
-        margin: { l: 60, r: 20, t: 50, b: 50 }
+        margin: { l: 70, r: 30, t: 60, b: 90 }
     };
 
     Plotly.newPlot(divId, [trace], layout, { responsive: true });
