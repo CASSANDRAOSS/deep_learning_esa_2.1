@@ -32,7 +32,8 @@ function computeYValues(xs) {
 // Gaussian Noise (Varianz = 0.05)
 function gaussianNoise(mean = 0, variance = 0.05) {
     // erzeugt normalverteilte Zufallszahlen
-    const u1 = Math.random();
+    //const u1 = Math.random();
+    const u1 = Math.random() || 1e-10;
     const u2 = Math.random();
     const randStdNormal = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
     return mean + Math.sqrt(variance) * randStdNormal;
@@ -114,7 +115,7 @@ function plotDatasetClean(train, test) {
         width: 400  
     };
 
-    Plotly.newPlot('plot-clean', [traceTrain, traceTest], layout);
+    Plotly.newPlot('plot-clean', [traceTrain, traceTest], layout, { responsive: true });
 }
 
 function plotDatasetNoisy(train, test, noisyTrain, noisyTest) {
@@ -142,7 +143,7 @@ function plotDatasetNoisy(train, test, noisyTrain, noisyTest) {
         width: 400
     };
 
-    Plotly.newPlot('plot-noisy', [traceTrain, traceTest], layout);
+    Plotly.newPlot('plot-noisy', [traceTrain, traceTest], layout, { responsive: true });
 }
 
 // Diagramme zeichnen
@@ -204,7 +205,7 @@ async function trainBestFitModel(train, test, noisyTrainY, noisyTestY) {
     console.log("Training Best-Fit Modell (noisy)...");
 
     // moderate Anzahl an Epochen → gute Generalisierung
-    await model.fit(trainTensors.xsTensor, trainTensors.ysTensor, {
+    const history = await model.fit(trainTensors.xsTensor, trainTensors.ysTensor, {
         epochs: 150,
         batchSize: 32,
         shuffle: true,
@@ -217,7 +218,7 @@ async function trainBestFitModel(train, test, noisyTrainY, noisyTestY) {
     console.log("Best-Fit Train Loss:", trainLoss);
     console.log("Best-Fit Test Loss:", testLoss);
 
-    return { model, trainLoss, testLoss };
+    return { model, trainLoss, testLoss, history };
 }
 
 // ===============================
@@ -233,8 +234,8 @@ async function trainOverfitModel(train, test, noisyTrainY, noisyTestY) {
     console.log("Training Overfit Modell (noisy)...");
 
     // ABSICHTLICH VIEL ZU VIELE EPOCHEN
-    await model.fit(trainTensors.xsTensor, trainTensors.ysTensor, {
-        epochs: 1500,   // Overfitting garantiert
+    const history = await model.fit(trainTensors.xsTensor, trainTensors.ysTensor, {
+        epochs: 1500,   
         batchSize: 32,
         shuffle: true,
         verbose: 0
@@ -246,7 +247,7 @@ async function trainOverfitModel(train, test, noisyTrainY, noisyTestY) {
     console.log("Overfit Train Loss:", trainLoss);
     console.log("Overfit Test Loss:", testLoss);
 
-    return { model, trainLoss, testLoss };
+    return { model, trainLoss, testLoss, history };
 }
 
 
@@ -270,7 +271,7 @@ async function trainCleanModel(train, test) {
 
     console.log("Training Modell (clean)...");
 
-    await model.fit(trainTensors.xsTensor, trainTensors.ysTensor, {
+    const history = await model.fit(trainTensors.xsTensor, trainTensors.ysTensor, {
         epochs: 200,
         batchSize: 32,
         shuffle: true,
@@ -284,7 +285,7 @@ async function trainCleanModel(train, test) {
     console.log("Clean Model Train Loss:", trainLoss);
     console.log("Clean Model Test Loss:", testLoss);
 
-    return { model, trainLoss, testLoss };
+    return { model, trainLoss, testLoss, history };
 }
 
 
@@ -303,6 +304,27 @@ function predictCurve(model) {
     const ys = Array.from(ysTensor.dataSync());
 
     return { xs, ys };
+}
+
+function plotLossCurve(divId, history, title) {
+    const epochs = history.epoch.map((_, i) => i + 1);
+
+    const trace = {
+        x: epochs,
+        y: history.history.loss,
+        mode: 'lines',
+        name: 'Training Loss'
+    };
+
+    const layout = {
+        title: title,
+        xaxis: { title: 'Epoch' },
+        yaxis: { title: 'MSE Loss' },
+        autosize: true,
+        margin: { l: 50, r: 20, t: 50, b: 50 }
+    };
+
+    Plotly.newPlot(divId, [trace], layout, { responsive: true });
 }
 
 /* ------------------------------------------------------------
@@ -334,9 +356,11 @@ function plotCleanPredictions(train, test, model, trainLoss, testLoss) {
 
     Plotly.newPlot('plot-clean-train', [traceTrainPoints, traceTrainCurve], {
         title: 'Vorhersage auf Trainingsdaten (clean)',
-        xaxis: { title: 'x' },
-        yaxis: { title: 'y' }
-    });
+        xaxis: { title: 'x', automargin: true },
+        yaxis: { title: 'y', automargin: true },
+        autosize: true,
+        margin: { l: 50, r: 20, t: 50, b: 50 }
+   }, { responsive: true });
 
     // TEST-PLOT
     const traceTestPoints = {
@@ -357,9 +381,11 @@ function plotCleanPredictions(train, test, model, trainLoss, testLoss) {
 
     Plotly.newPlot('plot-clean-test', [traceTestPoints, traceTestCurve], {
         title: 'Vorhersage auf Testdaten (clean)',
-        xaxis: { title: 'x' },
-        yaxis: { title: 'y' }
-    });
+        xaxis: { title: 'x', automargin: true },
+        yaxis: { title: 'y', automargin: true },
+        autosize: true,
+        margin: { l: 50, r: 20, t: 50, b: 50 }
+    }, { responsive: true });
 
     // LOSS-WERTE UNTER DEN PLOTS
     document.getElementById("loss-clean").innerHTML = `
@@ -390,9 +416,11 @@ function plotBestFitPredictions(train, test, model, trainLoss, testLoss, noisyTr
 
     Plotly.newPlot('plot-best-train', [traceTrainPoints, traceTrainCurve], {
         title: 'Best-Fit Vorhersage (Train, noisy)',
-        xaxis: { title: 'x' },
-        yaxis: { title: 'y' }
-    });
+        xaxis: { title: 'x', automargin: true },
+        yaxis: { title: 'y', automargin: true },
+        autosize: true,
+        margin: { l: 50, r: 20, t: 50, b: 50 }
+    }, { responsive: true });
 
     // TEST-PLOT
     const traceTestPoints = {
@@ -413,9 +441,11 @@ function plotBestFitPredictions(train, test, model, trainLoss, testLoss, noisyTr
 
     Plotly.newPlot('plot-best-test', [traceTestPoints, traceTestCurve], {
         title: 'Best-Fit Vorhersage (Test, noisy)',
-        xaxis: { title: 'x' },
-        yaxis: { title: 'y' }
-    });
+        xaxis: { title: 'x', automargin: true },
+        yaxis: { title: 'y', automargin: true },
+        autosize: true,
+        margin: { l: 50, r: 20, t: 50, b: 50 }
+    }, { responsive: true });
 
     // LOSS-WERTE
     document.getElementById("loss-best").innerHTML = `
@@ -447,9 +477,11 @@ function plotOverfitPredictions(train, test, model, trainLoss, testLoss, noisyTr
 
     Plotly.newPlot('plot-overfit-train', [traceTrainPoints, traceTrainCurve], {
         title: 'Overfit Vorhersage (Train, noisy)',
-        xaxis: { title: 'x' },
-        yaxis: { title: 'y' }
-    });
+        xaxis: { title: 'x', automargin: true },
+        yaxis: { title: 'y', automargin: true },
+        autosize: true,
+        margin: { l: 50, r: 20, t: 50, b: 50 }
+    }, { responsive: true });
 
     // TEST-PLOT
     const traceTestPoints = {
@@ -470,9 +502,11 @@ function plotOverfitPredictions(train, test, model, trainLoss, testLoss, noisyTr
 
     Plotly.newPlot('plot-overfit-test', [traceTestPoints, traceTestCurve], {
         title: 'Overfit Vorhersage (Test, noisy)',
-        xaxis: { title: 'x' },
-        yaxis: { title: 'y' }
-    });
+        xaxis: { title: 'x', automargin: true },
+        yaxis: { title: 'y', automargin: true },
+        autosize: true,
+        margin: { l: 50, r: 20, t: 50, b: 50 }
+    }, { responsive: true });
 
     // LOSS-WERTE
     document.getElementById("loss-overfit").innerHTML = `
@@ -483,7 +517,21 @@ function plotOverfitPredictions(train, test, model, trainLoss, testLoss, noisyTr
 
 
 trainCleanModel(train, test).then(result => {
-    plotCleanPredictions(train, test, result.model, result.trainLoss, result.testLoss);
+    plotCleanPredictions(
+        train,
+        test,
+        result.model,
+        result.trainLoss,
+        result.testLoss
+    );
+
+    plotLossCurve(
+        'loss-clean-plot',
+        result.history,
+        'Loss-Verlauf / Lernkurve (Clean Model)'
+    );
+
+    document.getElementById("loading-clean").style.display = "none";
 });
 
 trainBestFitModel(train, test, ys_train_noisy, ys_test_noisy).then(result => {
@@ -496,6 +544,14 @@ trainBestFitModel(train, test, ys_train_noisy, ys_test_noisy).then(result => {
         ys_train_noisy,
         ys_test_noisy
     );
+
+    plotLossCurve(
+        'loss-best-plot',
+        result.history,
+        'Loss-Verlauf / Lernkurve (Best-Fit Modell)'
+    );
+
+    document.getElementById("loading-best").style.display = "none";
 });
 
 trainOverfitModel(train, test, ys_train_noisy, ys_test_noisy).then(result => {
@@ -508,6 +564,14 @@ trainOverfitModel(train, test, ys_train_noisy, ys_test_noisy).then(result => {
         ys_train_noisy,
         ys_test_noisy
     );
+
+    plotLossCurve(
+        'loss-overfit-plot',
+        result.history,
+        'Loss-Verlauf / Lernkurve (Overfit Modell)'
+    );
+
+    document.getElementById("loading-overfit").style.display = "none";
 });
 
 
