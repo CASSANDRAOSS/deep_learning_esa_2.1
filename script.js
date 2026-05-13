@@ -376,7 +376,7 @@ function plotCleanPredictions(train, test, model, trainLoss, testLoss) {
         xaxis: { title: 'x', automargin: true },
         yaxis: { title: 'y', automargin: true },
         autosize: true,
-        margin: { l: 50, r: 20, t: 50, b: 50 }
+        margin: { l: 60, r: 30, t: 60, b: 70 }
    }, { responsive: true });
 
     // TEST-PLOT
@@ -401,7 +401,7 @@ function plotCleanPredictions(train, test, model, trainLoss, testLoss) {
         xaxis: { title: 'x', automargin: true },
         yaxis: { title: 'y', automargin: true },
         autosize: true,
-        margin: { l: 50, r: 20, t: 50, b: 50 }
+        margin: { l: 60, r: 30, t: 60, b: 70 }
     }, { responsive: true });
 
     // LOSS-WERTE UNTER DEN PLOTS
@@ -436,7 +436,7 @@ function plotBestFitPredictions(train, test, model, trainLoss, testLoss, noisyTr
         xaxis: { title: 'x', automargin: true },
         yaxis: { title: 'y', automargin: true },
         autosize: true,
-        margin: { l: 50, r: 20, t: 50, b: 50 }
+        margin: { l: 60, r: 30, t: 60, b: 70 }
     }, { responsive: true });
 
     // TEST-PLOT
@@ -461,7 +461,7 @@ function plotBestFitPredictions(train, test, model, trainLoss, testLoss, noisyTr
         xaxis: { title: 'x', automargin: true },
         yaxis: { title: 'y', automargin: true },
         autosize: true,
-        margin: { l: 50, r: 20, t: 50, b: 50 }
+        margin: { l: 60, r: 30, t: 60, b: 70 }
     }, { responsive: true });
 
     // LOSS-WERTE
@@ -497,7 +497,7 @@ function plotOverfitPredictions(train, test, model, trainLoss, testLoss, noisyTr
         xaxis: { title: 'x', automargin: true },
         yaxis: { title: 'y', automargin: true },
         autosize: true,
-        margin: { l: 50, r: 20, t: 50, b: 50 }
+        margin: { l: 60, r: 30, t: 60, b: 70 }
     }, { responsive: true });
 
     // TEST-PLOT
@@ -522,7 +522,7 @@ function plotOverfitPredictions(train, test, model, trainLoss, testLoss, noisyTr
         xaxis: { title: 'x', automargin: true },
         yaxis: { title: 'y', automargin: true },
         autosize: true,
-        margin: { l: 50, r: 20, t: 50, b: 50 }
+        margin: { l: 60, r: 30, t: 60, b: 70 }
     }, { responsive: true });
 
     // LOSS-WERTE
