@@ -177,28 +177,3 @@ body {
 .nav-buttons button:hover {
     background-color: #3a78c2;
 }
-
-.loading {
-    text-align: center;
-    font-size: 16px;
-    color: #666;
-    padding: 20px;
-    font-style: italic;
-}
-
-/* Spinner */
-.loading::before {
-    content: "";
-    width: 16px;
-    height: 16px;
-    border: 3px solid #ccc;
-    border-top: 3px solid #4a90e2;
-    border-radius: 50%;
-    display: inline-block;
-    margin-right: 10px;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
