@@ -307,21 +307,24 @@ function predictCurve(model) {
 }
 
 function plotLossCurve(divId, history, title) {
-    const epochs = history.epoch.map((_, i) => i + 1);
+    const lossValues = history.history.loss;
+
+    const epochs = lossValues.map((_, i) => i + 1);
 
     const trace = {
         x: epochs,
-        y: history.history.loss,
+        y: lossValues,
         mode: 'lines',
-        name: 'Training Loss'
+        name: 'Training Loss',
+        line: { color: 'blue' }
     };
 
     const layout = {
         title: title,
-        xaxis: { title: 'Epoch' },
-        yaxis: { title: 'MSE Loss' },
+        xaxis: { title: 'Epoch', automargin: true },
+        yaxis: { title: 'MSE Loss', automargin: true },
         autosize: true,
-        margin: { l: 50, r: 20, t: 50, b: 50 }
+        margin: { l: 60, r: 20, t: 50, b: 50 }
     };
 
     Plotly.newPlot(divId, [trace], layout, { responsive: true });
@@ -532,6 +535,10 @@ trainCleanModel(train, test).then(result => {
     );
 
     document.getElementById("loading-clean").style.display = "none";
+}).catch(error => {
+    console.error("Fehler beim Clean-Modell:", error);
+    document.getElementById("loading-clean").innerHTML =
+        "Beim Laden des Clean-Modells ist ein Fehler aufgetreten.";
 });
 
 trainBestFitModel(train, test, ys_train_noisy, ys_test_noisy).then(result => {
@@ -552,6 +559,10 @@ trainBestFitModel(train, test, ys_train_noisy, ys_test_noisy).then(result => {
     );
 
     document.getElementById("loading-best").style.display = "none";
+}).catch(error => {
+    console.error("Fehler beim Best-Fit-Modell:", error);
+    document.getElementById("loading-best").innerHTML =
+        "Beim Laden des Best-Fit-Modells ist ein Fehler aufgetreten.";
 });
 
 trainOverfitModel(train, test, ys_train_noisy, ys_test_noisy).then(result => {
@@ -572,6 +583,10 @@ trainOverfitModel(train, test, ys_train_noisy, ys_test_noisy).then(result => {
     );
 
     document.getElementById("loading-overfit").style.display = "none";
+}).catch(error => {
+    console.error("Fehler beim Overfit-Modell:", error);
+    document.getElementById("loading-overfit").innerHTML =
+        "Beim Laden des Overfit-Modells ist ein Fehler aufgetreten.";
 });
 
 
